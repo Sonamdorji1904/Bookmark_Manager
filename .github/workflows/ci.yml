@@ -37,10 +37,10 @@ jobs:
           node-version: 20
 
       - name: Install backend dependencies
-        run: cd Backend && npm ci
+        run: cd backend && npm ci
 
       - name: Build backend
-        run: cd Backend && npm run build
+        run: cd backend && npm run build
 
   test-frontend:
     runs-on: ubuntu-latest
