@@ -1,7 +1,6 @@
 import dotenv from "dotenv";
 import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-import { Strategy as GitHubStrategy } from "passport-github2";
 import { findOrCreateOAuthUser } from "../modules/auth/service";
 
 dotenv.config();
@@ -49,55 +48,6 @@ passport.use(
           providerId: profile.id,
           email: profile.emails?.[0]?.value || `google_${profile.id}@placeholder.local`,
           name: profile.displayName || profile.username || "Google User",
-          avatar: profile.photos?.[0]?.value || null,
-        });
-
-        done(null, {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          avatar: user.avatar,
-          provider: user.provider,
-          providerId: user.providerId,
-        });
-      } catch (error) {
-        done(error as Error);
-      }
-    },
-  ),
-);
-
-passport.use(
-  new GitHubStrategy(
-    {
-      clientID: ensureEnv("GITHUB_CLIENT_ID"),
-      clientSecret: ensureEnv("GITHUB_CLIENT_SECRET"),
-      callbackURL: `${backendBaseUrl}/api/auth/github/callback`,
-      scope: ["user:email"],
-    },
-    async (
-      _accessToken: string,
-      _refreshToken: string,
-      profile: {
-        id: string;
-        displayName?: string;
-        username?: string;
-        emails?: Array<{ value: string; verified?: boolean }>;
-        photos?: Array<{ value: string }>;
-      },
-      done: (error: Error | null, user?: Express.User | false) => void,
-    ) => {
-      try {
-        const email =
-          profile.emails?.find((entry: { verified?: boolean }) => entry.verified)?.value ||
-          profile.emails?.[0]?.value ||
-          `github_${profile.id}@placeholder.local`;
-
-        const user = await findOrCreateOAuthUser({
-          provider: "github",
-          providerId: profile.id,
-          email,
-          name: profile.displayName || profile.username || "GitHub User",
           avatar: profile.photos?.[0]?.value || null,
         });
 

@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
 import { User } from "../user/model";
-import { createAccessToken } from "./service";
+import { AUTH_COOKIE_NAME, createAccessToken, getAuthCookieOptions } from "./service";
 import { sendSuccess } from "../../utils/responseHandler";
 
 export const oauthCallbackHandler = async (req: Request, res: Response) => {
@@ -14,28 +14,11 @@ export const oauthCallbackHandler = async (req: Request, res: Response) => {
   }
 
   const token = createAccessToken(oauthUser);
-  const frontendUrl = process.env.FRONTEND_URL;
+  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
 
-  if (frontendUrl && req.query.mode !== "json") {
-    const redirectUrl = new URL("/auth/callback", frontendUrl);
-    redirectUrl.searchParams.set("token", token);
-    return res.redirect(redirectUrl.toString());
-  }
+  res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieOptions());
 
-  return sendSuccess(
-    res,
-    {
-      token,
-      user: {
-        id: oauthUser.id,
-        name: oauthUser.name,
-        email: oauthUser.email,
-        avatar: oauthUser.avatar,
-        provider: oauthUser.provider,
-      },
-    },
-    "Authenticated successfully",
-  );
+  return res.redirect(new URL("/", frontendUrl).toString());
 };
 
 export const authMeController = async (req: Request, res: Response) => {
@@ -49,7 +32,7 @@ export const authMeController = async (req: Request, res: Response) => {
   }
 
   const user = await User.findByPk(authUser.id, {
-    attributes: ["id", "name", "email", "avatar", "provider", "providerId", "createdAt", "updatedAt"],
+    attributes: ["id", "name", "email", "avatar", "provider", "providerId", "createdAt"],
   });
 
   if (!user) {
@@ -60,4 +43,10 @@ export const authMeController = async (req: Request, res: Response) => {
   }
 
   return sendSuccess(res, user, "Authenticated user profile");
+};
+
+export const logoutController = async (_req: Request, res: Response) => {
+  res.clearCookie(AUTH_COOKIE_NAME, getAuthCookieOptions());
+
+  return sendSuccess(res, null, "Logged out successfully");
 };

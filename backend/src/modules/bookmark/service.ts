@@ -148,10 +148,20 @@ export const listBookmarks = async (userId: string, query: BookmarkQuery) => {
   const searchTerm = query.search?.trim();
 
   if (searchTerm) {
-    include[0] = {
-      ...(include[0] as object),
-      required: false,
-    };
+    const matchingTags = await Tag.findAll({
+      where: {
+        userId,
+        name: {
+          [Op.iLike]: `%${searchTerm}%`,
+        },
+      },
+      attributes: ["name"],
+    });
+
+    const matchingTagNames = matchingTags.map((tag) => tag.name);
+    const tagSearchConditions = matchingTagNames.length
+      ? [{ tags: { [Op.overlap]: matchingTagNames } }]
+      : [];
 
     where[Op.or] = [
       { title: { [Op.iLike]: `%${searchTerm}%` } },
@@ -159,8 +169,7 @@ export const listBookmarks = async (userId: string, query: BookmarkQuery) => {
       { url: { [Op.iLike]: `%${searchTerm}%` } },
       { domain: { [Op.iLike]: `%${searchTerm}%` } },
       { category: { [Op.iLike]: `%${searchTerm}%` } },
-      { tags: { [Op.overlap]: [searchTerm] } },
-      { "$tagEntities.name$": { [Op.iLike]: `%${searchTerm}%` } },
+      ...tagSearchConditions,
     ];
   }
 

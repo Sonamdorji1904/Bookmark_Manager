@@ -7,7 +7,7 @@ declare global {
       email: string;
       name: string;
       avatar?: string | null;
-      provider: "google" | "github";
+      provider: "google";
       providerId: string;
     }
 

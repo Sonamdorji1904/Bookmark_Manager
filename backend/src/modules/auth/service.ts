@@ -9,15 +9,33 @@ export type JwtPayload = {
   id: string;
   email: string;
   name: string;
-  provider: "google" | "github";
+  provider: "google";
   providerId: string;
 };
 
-const jwtSecret = process.env.JWT_SECRET;
+export const AUTH_COOKIE_NAME = "bookmark_manager_token";
 
-if (!jwtSecret) {
-  throw new Error("JWT_SECRET is required");
-}
+export const getAuthCookieOptions = () => {
+  const isProduction = process.env.NODE_ENV === "production";
+
+  return {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? ("none" as const) : ("lax" as const),
+    path: "/",
+    maxAge: 1000 * 60 * 60 * 24 * 7,
+  };
+};
+
+const getJwtSecret = () => {
+  const jwtSecret = process.env.JWT_SECRET;
+
+  if (!jwtSecret) {
+    throw new Error("JWT_SECRET is required");
+  }
+
+  return jwtSecret;
+};
 
 export const findOrCreateOAuthUser = async (input: OAuthUserInput) => {
   const parsed = oauthUserSchema.parse(input);
@@ -82,11 +100,11 @@ export const createAccessToken = (
     providerId: user.providerId,
   };
 
-  return jwt.sign(payload, jwtSecret, {
+  return jwt.sign(payload, getJwtSecret(), {
     expiresIn: "7d",
   });
 };
 
 export const verifyAccessToken = (token: string): JwtPayload => {
-  return jwt.verify(token, jwtSecret) as JwtPayload;
+  return jwt.verify(token, getJwtSecret()) as JwtPayload;
 };

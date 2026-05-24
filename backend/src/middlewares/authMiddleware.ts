@@ -1,8 +1,22 @@
 import { NextFunction, Request, Response } from "express";
-import { findOrCreateOAuthUser, verifyAccessToken } from "../modules/auth/service";
+import { AUTH_COOKIE_NAME, verifyAccessToken } from "../modules/auth/service";
 
-const allowDevBypass =
-  process.env.ALLOW_DEV_AUTH === "true" || process.env.NODE_ENV !== "production";
+const parseCookieValue = (cookieHeader: string | undefined, name: string) => {
+  if (!cookieHeader) {
+    return null;
+  }
+
+  const cookieEntry = cookieHeader
+    .split(";")
+    .map((entry) => entry.trim())
+    .find((entry) => entry.startsWith(`${name}=`));
+
+  if (!cookieEntry) {
+    return null;
+  }
+
+  return cookieEntry.slice(name.length + 1);
+};
 
 export const authenticateJWT = async (
   req: Request,
@@ -10,36 +24,16 @@ export const authenticateJWT = async (
   next: NextFunction,
 ) => {
   const authHeader = req.headers.authorization;
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.split(" ")[1] : null;
+  const cookieToken = parseCookieValue(req.headers.cookie, AUTH_COOKIE_NAME);
+  const token = bearerToken || cookieToken;
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    if (!allowDevBypass) {
-      return res.status(401).json({
-        success: false,
-        message: "Authorization token is required",
-      });
-    }
-
-    const devUser = await findOrCreateOAuthUser({
-      provider: "google",
-      providerId: "dev-bookmark-manager-user",
-      email: process.env.DEV_USER_EMAIL || "dev@bookmarkmanager.local",
-      name: process.env.DEV_USER_NAME || "Local Dev User",
-      avatar: null,
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      message: "Authentication required",
     });
-
-    req.user = {
-      id: devUser.id,
-      email: devUser.email,
-      name: devUser.name,
-      avatar: devUser.avatar,
-      provider: devUser.provider,
-      providerId: devUser.providerId,
-    };
-
-    return next();
   }
-
-  const token = authHeader.split(" ")[1];
 
   try {
     const payload = verifyAccessToken(token);

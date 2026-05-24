@@ -1,7 +1,7 @@
 import { Router } from "express";
 import passport from "passport";
 import { authenticateJWT } from "../../middlewares/authMiddleware";
-import { authMeController, oauthCallbackHandler } from "./controller";
+import { authMeController, logoutController, oauthCallbackHandler } from "./controller";
 
 const router = Router();
 
@@ -22,23 +22,6 @@ router.get(
   oauthCallbackHandler,
 );
 
-router.get(
-  "/github",
-  passport.authenticate("github", {
-    scope: ["user:email"],
-    session: false,
-  }),
-);
-
-router.get(
-  "/github/callback",
-  passport.authenticate("github", {
-    failureRedirect: "/api/auth/failure",
-    session: false,
-  }),
-  oauthCallbackHandler,
-);
-
 router.get("/failure", (_req, res) => {
   return res.status(401).json({
     success: false,
@@ -47,5 +30,6 @@ router.get("/failure", (_req, res) => {
 });
 
 router.get("/me", authenticateJWT, authMeController);
+router.post("/logout", logoutController);
 
 export default router;

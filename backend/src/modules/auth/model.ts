@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const authProviders = ["google", "github"] as const;
+export const authProviders = ["google"] as const;
 
 export type AuthProvider = (typeof authProviders)[number];
 
