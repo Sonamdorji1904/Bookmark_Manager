@@ -4,6 +4,9 @@ services:
     runtime: docker
     dockerfilePath: ./Frontend/Dockerfile
     branch: main
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
 
   - type: web
     name: bookmark-backend

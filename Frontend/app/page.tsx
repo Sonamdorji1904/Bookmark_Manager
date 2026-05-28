@@ -27,19 +27,28 @@ export default function Home() {
     let active = true
 
     const loadUser = async () => {
-      try {
-        const currentUser = await fetchCurrentUser()
+      const maxAttempts = 3
 
-        if (active) {
-          setUser(currentUser)
-        }
-      } catch {
-        if (active) {
-          setUser(null)
-        }
-      } finally {
-        if (active) {
-          setLoading(false)
+      for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+        try {
+          const currentUser = await fetchCurrentUser()
+
+          if (active) {
+            setUser(currentUser)
+            setLoading(false)
+          }
+
+          return
+        } catch {
+          if (attempt < maxAttempts) {
+            await new Promise((resolve) => window.setTimeout(resolve, 300))
+            continue
+          }
+
+          if (active) {
+            setUser(null)
+            setLoading(false)
+          }
         }
       }
     }

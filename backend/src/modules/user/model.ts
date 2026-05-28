@@ -47,7 +47,7 @@ export const initUserModel = (sequelize: Sequelize) => {
         allowNull: true,
       },
       provider: {
-        type: DataTypes.ENUM("google", "github"),
+        type: DataTypes.ENUM("google"),
         allowNull: false,
       },
       providerId: {

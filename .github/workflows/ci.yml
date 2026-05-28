@@ -37,10 +37,10 @@ jobs:
           node-version: 20
 
       - name: Install backend dependencies
-        run: cd backend && npm ci
+        run: cd Backend && npm ci
 
       - name: Build backend
-        run: cd backend && npm run build
+        run: cd Backend && npm run build
 
   test-frontend:
     runs-on: ubuntu-latest
@@ -64,6 +64,25 @@ jobs:
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main'
 
+    env:
+      RENDER_BACKEND_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+      RENDER_FRONTEND_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+
     steps:
-      - name: Trigger Render Deploy
-        run: curl -X POST ${{ secrets.RENDER_DEPLOY_HOOK }}
+      - name: Trigger Backend Render Deploy
+        run: |
+          if [ -z "$RENDER_BACKEND_DEPLOY_HOOK" ]; then
+            echo "Missing secret RENDER_BACKEND_DEPLOY_HOOK" >&2
+            exit 1
+          fi
+
+          curl -fsS -X POST "$RENDER_BACKEND_DEPLOY_HOOK"
+
+      - name: Trigger Frontend Render Deploy
+        run: |
+          if [ -z "$RENDER_FRONTEND_DEPLOY_HOOK" ]; then
+            echo "Missing secret RENDER_FRONTEND_DEPLOY_HOOK" >&2
+            exit 1
+          fi
+
+          curl -fsS -X POST "$RENDER_FRONTEND_DEPLOY_HOOK"

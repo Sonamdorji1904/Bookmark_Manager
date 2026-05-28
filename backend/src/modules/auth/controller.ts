@@ -14,7 +14,7 @@ export const oauthCallbackHandler = async (req: Request, res: Response) => {
   }
 
   const token = createAccessToken(oauthUser);
-  const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+  const frontendUrl = process.env.FRONTEND_URL;
 
   res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieOptions());
 
@@ -35,14 +35,32 @@ export const authMeController = async (req: Request, res: Response) => {
     attributes: ["id", "name", "email", "avatar", "provider", "providerId", "createdAt"],
   });
 
-  if (!user) {
-    return res.status(404).json({
-      success: false,
-      message: "User not found",
-    });
+  if (user) {
+    return sendSuccess(res, user, "Authenticated user profile");
   }
 
-  return sendSuccess(res, user, "Authenticated user profile");
+  const fallbackUser = await User.findOne({
+    where: { email: authUser.email },
+    attributes: ["id", "name", "email", "avatar", "provider", "providerId", "createdAt"],
+  });
+
+  if (fallbackUser) {
+    return sendSuccess(res, fallbackUser, "Authenticated user profile");
+  }
+
+  return sendSuccess(
+    res,
+    {
+      id: authUser.id,
+      name: authUser.name,
+      email: authUser.email,
+      avatar: authUser.avatar ?? null,
+      provider: authUser.provider,
+      providerId: authUser.providerId,
+      createdAt: new Date().toISOString(),
+    },
+    "Authenticated user profile",
+  );
 };
 
 export const logoutController = async (_req: Request, res: Response) => {

@@ -13,7 +13,7 @@ const ensureEnv = (key: string) => {
   return value;
 };
 
-const backendBaseUrl = process.env.BACKEND_URL || "http://localhost:5000";
+const backendBaseUrl = process.env.BACKEND_URL;
 
 passport.serializeUser((user, done) => {
   done(null, user);
